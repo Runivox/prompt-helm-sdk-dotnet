@@ -1,0 +1,26 @@
+## .NET
+bin/
+obj/
+out/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+.idea/
+*.swp
+
+## Build artifacts
+nupkgs/
+*.nupkg
+*.snupkg
+TestResults/
+coverage*.json
+coverage*.xml
+*.lcov
+*.opencover.xml
+
+## OS
+.DS_Store
+Thumbs.db

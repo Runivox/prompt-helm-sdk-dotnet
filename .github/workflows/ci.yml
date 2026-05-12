@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore
+      - name: Verify formatting
+        run: dotnet format --verify-no-changes --no-restore
+      - name: Build
+        run: dotnet build --no-restore -c Release
+      - name: Test
+        run: dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/TestResults/*.trx'
+
+  release:
+    name: Pack and publish
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore
+        run: dotnet restore src/PromptHelm.Sdk/PromptHelm.Sdk.csproj
+      - name: Build (Release)
+        run: dotnet build src/PromptHelm.Sdk/PromptHelm.Sdk.csproj -c Release --no-restore
+      - name: Pack
+        run: dotnet pack src/PromptHelm.Sdk/PromptHelm.Sdk.csproj -c Release -o nupkgs --no-build
+      - name: Publish to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "nupkgs/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
