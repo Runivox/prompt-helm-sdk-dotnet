@@ -41,11 +41,28 @@ public sealed record ExecuteRequest
     public List<string>? StopSequences { get; init; }
 
     /// <summary>
-    /// Environment branch to resolve. <c>"production"</c> or <c>"development"</c>.
+    /// Environment to resolve the prompt version from. The gateway accepts only
+    /// <see cref="PromptEnvironments.Production"/> (<c>"production"</c>) or
+    /// <see cref="PromptEnvironments.Development"/> (<c>"development"</c>).
+    /// When omitted, the latest version is used.
     /// </summary>
     [JsonPropertyName("environment")]
     public string? Environment { get; init; }
 
     [JsonPropertyName("timeoutMs")]
     public long? TimeoutMs { get; init; }
+}
+
+/// <summary>
+/// Valid values for <see cref="ExecuteRequest.Environment"/>. The PromptHelm
+/// gateway recognizes exactly these two environments; there is no
+/// <c>staging</c>/<c>main</c>/<c>dev</c> triad.
+/// </summary>
+public static class PromptEnvironments
+{
+    /// <summary>The <c>production</c> environment.</summary>
+    public const string Production = "production";
+
+    /// <summary>The <c>development</c> environment.</summary>
+    public const string Development = "development";
 }

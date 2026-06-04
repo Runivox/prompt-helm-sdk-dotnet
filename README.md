@@ -18,6 +18,12 @@ choices, provider keys, or pricing logic into your code.
 - Exponential-backoff retry on transient (5xx / network) failures
 - Typed exception hierarchy mapped to PromptHelm error codes
 
+> The API-token surface is exactly two endpoints: `POST /api/v1/gateway/execute`
+> (`ExecuteAsync`) and `POST /api/v1/gateway/stream` (`StreamAsync`). There is no
+> token-callable prompt-fetch, version-listing, or telemetry endpoint — resolve a
+> saved prompt by passing `PromptSlug`/`PromptId` (plus an optional
+> `Environment`) into the execute/stream call.
+
 ## Install
 
 ```bash
@@ -69,6 +75,21 @@ await foreach (StreamEvent evt in client.StreamAsync(new ExecuteRequest
             break;
     }
 }
+```
+
+## Environments
+
+`ExecuteRequest.Environment` selects which version of a saved prompt to resolve.
+The gateway accepts only `"production"` and `"development"` — there is no
+`staging`/`main`/`dev` triad. Use the `PromptEnvironments` constants to avoid
+typos. When omitted, the latest version is used.
+
+```csharp
+new ExecuteRequest
+{
+    PromptSlug = "support-summary",
+    Environment = PromptEnvironments.Production, // or PromptEnvironments.Development
+};
 ```
 
 ## Dependency injection
@@ -126,6 +147,11 @@ All gateway errors derive from `PromptHelmException`:
 `OperationCanceledException` propagates when the caller cancels via
 `CancellationToken`.
 
+Every `PromptHelmException` surfaces the fields from the gateway's error
+envelope (`{ statusCode, errorCode, message, timestamp, requestId }`):
+`StatusCode`, `ErrorCode`, `Message`, and `RequestId`. Include `RequestId` when
+contacting support so the request can be traced.
+
 ```csharp
 try
 {
@@ -133,12 +159,13 @@ try
 }
 catch (RateLimitException ex)
 {
-    logger.LogWarning("Rate limited (correlation {Id}): {Message}",
-        ex.CorrelationId, ex.Message);
+    logger.LogWarning("Rate limited (request {RequestId}): {Message}",
+        ex.RequestId, ex.Message);
 }
 catch (PromptHelmException ex)
 {
-    logger.LogError(ex, "PromptHelm {Code}: {Message}", ex.Code, ex.Message);
+    logger.LogError(ex, "PromptHelm {ErrorCode} (request {RequestId}): {Message}",
+        ex.ErrorCode, ex.RequestId, ex.Message);
     throw;
 }
 ```
