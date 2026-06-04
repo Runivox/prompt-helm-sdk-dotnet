@@ -126,8 +126,8 @@ public sealed class PromptHelmClient : IPromptHelmClient
             {
                 throw new ApiException(
                     (int)response.StatusCode,
-                    code: null,
-                    correlationId: TryReadCorrelationId(response),
+                    errorCode: null,
+                    requestId: TryReadRequestId(response),
                     "Server returned an empty response body.");
             }
             return parsed;
@@ -174,8 +174,8 @@ public sealed class PromptHelmClient : IPromptHelmClient
             {
                 throw new ApiException(
                     (int)response.StatusCode,
-                    code: null,
-                    correlationId: TryReadCorrelationId(response),
+                    errorCode: null,
+                    requestId: TryReadRequestId(response),
                     "Server returned an empty stream body.");
             }
 
@@ -318,9 +318,9 @@ public sealed class PromptHelmClient : IPromptHelmClient
         return string.IsNullOrWhiteSpace(prefix) ? baseUa : $"{prefix} {baseUa}";
     }
 
-    private static string? TryReadCorrelationId(HttpResponseMessage response)
+    private static string? TryReadRequestId(HttpResponseMessage response)
     {
-        if (response.Headers.TryGetValues("x-correlation-id", out IEnumerable<string>? values))
+        if (response.Headers.TryGetValues("x-request-id", out IEnumerable<string>? values))
         {
             foreach (string v in values)
             {

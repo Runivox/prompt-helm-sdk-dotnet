@@ -23,7 +23,7 @@ public class RetryTests
             {
                 return Task.FromResult(MockHttpMessageHandler.Json(
                     HttpStatusCode.InternalServerError,
-                    """{"statusCode":500,"error":"Internal","message":"flaky"}"""));
+                    """{"statusCode":500,"errorCode":"INTERNAL_ERROR","message":"flaky","timestamp":"2026-06-05T00:00:00.000Z","requestId":"r-1"}"""));
             }
             return Task.FromResult(MockHttpMessageHandler.Json(
                 HttpStatusCode.OK,
@@ -49,7 +49,7 @@ public class RetryTests
             attempts++;
             return Task.FromResult(MockHttpMessageHandler.Json(
                 HttpStatusCode.Unauthorized,
-                """{"statusCode":401,"error":"Unauthorized","message":"no"}"""));
+                """{"statusCode":401,"errorCode":"UNAUTHORIZED","message":"no","timestamp":"2026-06-05T00:00:00.000Z","requestId":"r-2"}"""));
         });
         using var http = new HttpClient(handler);
         using var client = new PromptHelmClient(
@@ -70,7 +70,7 @@ public class RetryTests
             attempts++;
             return Task.FromResult(MockHttpMessageHandler.Json(
                 HttpStatusCode.BadGateway,
-                """{"statusCode":502,"error":"Bad","message":"down"}"""));
+                """{"statusCode":502,"errorCode":"INTERNAL_ERROR","message":"down","timestamp":"2026-06-05T00:00:00.000Z","requestId":"r-3"}"""));
         });
         using var http = new HttpClient(handler);
         using var client = new PromptHelmClient(

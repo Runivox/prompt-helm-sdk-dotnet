@@ -74,8 +74,8 @@ public class StreamTests
         });
 
         Assert.Single(consumed);
-        Assert.Equal("E_UPSTREAM", ex.Code);
-        Assert.Equal("r-9", ex.CorrelationId);
+        Assert.Equal("E_UPSTREAM", ex.ErrorCode);
+        Assert.Equal("r-9", ex.RequestId);
         Assert.Equal("provider down", ex.Message);
     }
 
@@ -84,7 +84,7 @@ public class StreamTests
     {
         var handler = new MockHttpMessageHandler(_ => MockHttpMessageHandler.Json(
             HttpStatusCode.Unauthorized,
-            """{"statusCode":401,"error":"Unauthorized","message":"bad"}"""));
+            """{"statusCode":401,"errorCode":"UNAUTHORIZED","message":"bad","timestamp":"2026-06-05T00:00:00.000Z","requestId":"r-1"}"""));
         using var http = new HttpClient(handler);
         using var client = new PromptHelmClient(new PromptHelmConfig { ApiKey = ValidKey }, http);
 

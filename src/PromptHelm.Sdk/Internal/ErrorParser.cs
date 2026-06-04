@@ -6,8 +6,10 @@ internal static class ErrorParser
 {
     public static PromptHelmException Parse(int status, string? rawBody)
     {
-        string? code = null;
-        string? correlationId = null;
+        // Error envelope (GlobalExceptionFilter): { statusCode, errorCode, message, timestamp, requestId }.
+        // `message` may be a JSON string or an array of strings (class-validator output).
+        string? errorCode = null;
+        string? requestId = null;
         string? message = null;
 
         if (!string.IsNullOrWhiteSpace(rawBody))
@@ -17,20 +19,19 @@ internal static class ErrorParser
                 using JsonDocument doc = JsonDocument.Parse(rawBody!);
                 if (doc.RootElement.ValueKind == JsonValueKind.Object)
                 {
-                    if (doc.RootElement.TryGetProperty("message", out JsonElement msg)
-                        && msg.ValueKind == JsonValueKind.String)
+                    if (doc.RootElement.TryGetProperty("message", out JsonElement msg))
                     {
-                        message = msg.GetString();
+                        message = ReadMessage(msg);
                     }
-                    if (doc.RootElement.TryGetProperty("code", out JsonElement codeEl)
+                    if (doc.RootElement.TryGetProperty("errorCode", out JsonElement codeEl)
                         && codeEl.ValueKind == JsonValueKind.String)
                     {
-                        code = codeEl.GetString();
+                        errorCode = codeEl.GetString();
                     }
-                    if (doc.RootElement.TryGetProperty("correlationId", out JsonElement corr)
-                        && corr.ValueKind == JsonValueKind.String)
+                    if (doc.RootElement.TryGetProperty("requestId", out JsonElement rid)
+                        && rid.ValueKind == JsonValueKind.String)
                     {
-                        correlationId = corr.GetString();
+                        requestId = rid.GetString();
                     }
                 }
             }
@@ -44,12 +45,40 @@ internal static class ErrorParser
 
         return status switch
         {
-            401 => new AuthenticationException(status, code, correlationId, message),
-            403 => new AuthorizationException(status, code, correlationId, message),
-            404 => new NotFoundException(status, code, correlationId, message),
-            429 => new RateLimitException(status, code, correlationId, message),
-            _ => new ApiException(status, code, correlationId, message),
+            401 => new AuthenticationException(status, errorCode, requestId, message),
+            403 => new AuthorizationException(status, errorCode, requestId, message),
+            404 => new NotFoundException(status, errorCode, requestId, message),
+            429 => new RateLimitException(status, errorCode, requestId, message),
+            _ => new ApiException(status, errorCode, requestId, message),
         };
+    }
+
+    private static string? ReadMessage(JsonElement msg)
+    {
+        if (msg.ValueKind == JsonValueKind.String)
+        {
+            return msg.GetString();
+        }
+        if (msg.ValueKind == JsonValueKind.Array)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            foreach (JsonElement item in msg.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.String)
+                {
+                    string? part = item.GetString();
+                    if (!string.IsNullOrEmpty(part))
+                    {
+                        parts.Add(part!);
+                    }
+                }
+            }
+            if (parts.Count > 0)
+            {
+                return string.Join("; ", parts);
+            }
+        }
+        return null;
     }
 
     private static string FallbackMessage(int status) => status switch
