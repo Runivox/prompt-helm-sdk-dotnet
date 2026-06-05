@@ -4,6 +4,14 @@ All notable changes to `PromptHelm.Sdk` are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-06-06
+
+### Changed
+- **BREAKING:** error response fields aligned to the real gateway envelope
+  (`errorCode`, `requestId`, `timestamp`); the previous `code` / `correlationId`
+  names were removed.
+- User-Agent standardized to `prompt-helm-sdk-dotnet/<version>`.
+
 ## [0.1.0] - 2026-05-13
 
 ### Added

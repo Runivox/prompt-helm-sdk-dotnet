@@ -10,7 +10,7 @@
     <AssemblyName>PromptHelm.Sdk</AssemblyName>
 
     <PackageId>PromptHelm.Sdk</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>Runivox</Authors>
     <Company>Runivox</Company>
     <Description>Official .NET SDK for PromptHelm — call your managed prompts from any application.</Description>
